@@ -101,14 +101,17 @@ class Table:
 
     def pivot_table(self, keys_to_pivot_list, keys_to_aggregate_list, aggregate_func_list):
         # First create a list of unique values for each key
-        set = ['embarked', 'gender', 'class']
-        unique_values_list = [['Southampton', 'Cherbourg', 'Queenstown'], ['M', 'F'], ['3', '2', '1']]
-        combine = []
-        for i in range(len(keys_to_pivot_list)):
-            for j in range(len(set)):
-                if set[j] == keys_to_pivot_list[i]:
-                    combine.append(unique_values_list[j])
-        final_combine = combination_gen.gen_comb_list(combine)
+        unique_values_list = []
+        for i in keys_to_pivot_list:
+            now = self.select(i)
+            set_now = [b for n in now for a, b in n.items()]
+            blank = []
+            for i in set_now:
+                if i not in blank:
+                    blank.append(i)
+            unique_values_list.append(blank)
+        # print(unique_values_list)
+        final_combine = combination_gen.gen_comb_list(unique_values_list)
         # print(final_combine)
 
         final = []
@@ -118,7 +121,7 @@ class Table:
             add0 = []
             all = []
             for j in range(len(final_combine[0])):
-                now = now.filter(lambda x: x[set[j]] == final_combine[i][j])
+                now = now.filter(lambda x: x[keys_to_pivot_list[j]] == final_combine[i][j])
                 add0.append(final_combine[i][j])
             all.append(add0)
             for j in range(len(aggregate_func_list)):
@@ -146,6 +149,7 @@ my_DB.insert(table3)
 my_DB.insert(table4)
 my_DB.insert(table5)
 my_table1 = my_DB.search('cities')
+my_table2 = my_DB.search('countries')
 my_table3 = my_DB.search('players')
 my_table4 = my_DB.search('teams')
 my_table5 = my_DB.search('titanic')
@@ -202,12 +206,24 @@ print('Male passenger:', male_rate)
 print('Female passenger:', female_rate)
 
 print()
-table4 = Table('titanic', titanic)
-my_DB.insert(table4)
-my_table4 = my_DB.search('titanic')
-my_pivot = my_table4.pivot_table(['embarked', 'gender', 'class'], ['fare', 'fare', 'fare', 'last'], [lambda x: min(x), lambda x: max(x), lambda x: sum(x)/len(x), lambda x: len(x)])
+my_pivot = my_table5.pivot_table(['embarked', 'gender', 'class'], ['fare', 'fare', 'fare', 'last'], [lambda x: min(x), lambda x: max(x), lambda x: sum(x)/len(x), lambda x: len(x)])
 print(my_pivot)
 
+print()
+print('Check1')
+check1 = my_table3.pivot_table(['position'], ['passes', 'shots'], [lambda x: sum(x)/len(x), lambda x: sum(x)/len(x)])
+print(check1)
+
+print()
+print('Check2')
+table6 = my_table1.join(my_table2, 'country')
+check2 = table6.pivot_table(['EU', 'coastline'], ['temperature', 'latitude', 'latitude'], [lambda x: sum(x)/len(x), lambda x: min(x), lambda x: max(x)])
+print(check2)
+
+print()
+print('Check3')
+my_pivot = my_table5.pivot_table(['class', 'gender', 'survived'], ['survived', 'fare'], [lambda x: len(x), lambda x: sum(x)/len(x)])
+print(my_pivot)
 # print("Test filter: only filtering out cities in Italy")
 # my_table1_filtered = my_table1.filter(lambda x: x['country'] == 'Italy')
 # print(my_table1_filtered)
