@@ -47,6 +47,7 @@ class DB:
         return None
 
 import copy
+import combination_gen
 class Table:
     def __init__(self, table_name, table):
         self.table_name = table_name
@@ -70,7 +71,7 @@ class Table:
                 filtered_table.table.append(item1)
         return filtered_table
 
-    def __is_float(self, element):
+    def __is_float(self,element):
         if element is None:
             return False
         try:
@@ -97,6 +98,38 @@ class Table:
                     dict_temp[key] = item1[key]
             temps.append(dict_temp)
         return temps
+
+    def pivot_table(self, keys_to_pivot_list, keys_to_aggregate_list, aggregate_func_list):
+        # First create a list of unique values for each key
+        set = ['embarked', 'gender', 'class']
+        unique_values_list = [['Southampton', 'Cherbourg', 'Queenstown'], ['M', 'F'], ['3', '2', '1']]
+        combine = []
+        for i in range(len(keys_to_pivot_list)):
+            for j in range(len(set)):
+                if set[j] == keys_to_pivot_list[i]:
+                    combine.append(unique_values_list[j])
+        final_combine = combination_gen.gen_comb_list(combine)
+        # print(final_combine)
+
+        final = []
+        for i in range(len(final_combine)):
+            now = copy.deepcopy(self)
+            add = []
+            add0 = []
+            all = []
+            for j in range(len(final_combine[0])):
+                now = now.filter(lambda x: x[set[j]] == final_combine[i][j])
+                add0.append(final_combine[i][j])
+            all.append(add0)
+            for j in range(len(aggregate_func_list)):
+                # print(aggregate_func_list[j] ,keys_to_aggregate_list[j])
+                ans = now.aggregate(aggregate_func_list[j] ,keys_to_aggregate_list[j])
+                # print(ans)
+                add.append(ans)
+            all.append(add)
+            # print(all)
+            final.append(all)
+        return final
 
     def __str__(self):
         return self.table_name + ':' + str(self.table)
@@ -167,6 +200,13 @@ female_rate = num_female_sur/num_female
 print('Survived Rate')
 print('Male passenger:', male_rate)
 print('Female passenger:', female_rate)
+
+print()
+table4 = Table('titanic', titanic)
+my_DB.insert(table4)
+my_table4 = my_DB.search('titanic')
+my_pivot = my_table4.pivot_table(['embarked', 'gender', 'class'], ['fare', 'fare', 'fare', 'last'], [lambda x: min(x), lambda x: max(x), lambda x: sum(x)/len(x), lambda x: len(x)])
+print(my_pivot)
 
 # print("Test filter: only filtering out cities in Italy")
 # my_table1_filtered = my_table1.filter(lambda x: x['country'] == 'Italy')
